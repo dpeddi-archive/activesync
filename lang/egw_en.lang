@@ -1,0 +1,12 @@
+activesync	common	en	eSync
+additional addressbooks to sync	activesync	en	Additional addressbooks to sync
+additional calendars to sync	activesync	en	Additional calendars to sync
+addressbooks to sync	activesync	en	Addressbooks to sync
+email account to sync	activesync	en	eMail Account to sync
+force sorting on device to	activesync	en	Force sorting on device to
+global address search always searches in all addressbooks, so you dont need to sync all addressbooks to be able to access them, if you are online.	activesync	en	Global address search always searches in all addressbooks, so you dont need to sync all addressbooks to be able to access them, if you are online.
+not all devices support additonal calendars. your personal calendar is always synchronised.	activesync	en	Not all devices support additonal calendars. Your personal calendar is always synchronised.
+not all devices support multiple addressbooks, so you can choose to sync all above selected addressbooks as one.	activesync	en	Not all devices support multiple addressbooks, so you can choose to sync all above selected addressbooks as one.
+some devices (eg. windows mobil, but not ios) sort by addressbooks "own sorting" attribute, which might not be what you want on the device. with this setting you can force the device to use a different sorting for all contacts, without changing it in addressbook.	activesync	en	Some devices (eg. Windows Mobil, but not iOS) sort by addressbooks "own sorting" attribute, which might not be what you want on the device. With this setting you can force the device to use a different sorting for all contacts, without changing it in addressbook.
+sync all addressbooks as one	activesync	en	Sync all addressbooks as one
+use addressbooks "own sorting" attribute	activesync	en	use addressbooks "own sorting" attribute

@@ -1,0 +1,12 @@
+activesync	common	de	eSync
+additional addressbooks to sync	activesync	de	Zusätzliche Addressbücher synchronisieren
+additional calendars to sync	activesync	de	Zusätzliche Kalender synchronisieren
+addressbooks to sync	activesync	de	Addressbücher zu synchronisieren
+email account to sync	activesync	de	eMail Konto zu synchronisieren
+force sorting on device to	activesync	de	Erzwinge Sortierung auf Gerät als
+global address search always searches in all addressbooks, so you dont need to sync all addressbooks to be able to access them, if you are online.	activesync	de	Die globale Adresssuche durchsucht immer alle Adressbücher, daher müssen Sie nicht alle Adressbücher synchronisieren, um darauf Zugriff zu haben solange Sie online sind.
+not all devices support additonal calendars. your personal calendar is always synchronised.	activesync	de	Nicht alle Geräte unterstützen zusätzliche Kalender. Ihr persönlicher Kalender wird immer synchronisiert.
+not all devices support multiple addressbooks, so you can choose to sync all above selected addressbooks as one.	activesync	de	Nicht alle Geräte unterstützen mehrere Adressbücher, deshalb können Sie alle oben ausgewählten Adressebücher in ein einziges synchronisieren.
+some devices (eg. windows mobil, but not ios) sort by addressbooks "own sorting" attribute, which might not be what you want on the device. with this setting you can force the device to use a different sorting for all contacts, without changing it in addressbook.	activesync	de	Einige Geräte (zB. Windows Mobil, nicht aber iOS) sortieren nach dem Adressbuch Attribut "eigende Sortiereung", was evtl. nicht das ist was Sie auf dem Gerät wollen. Mit dieser Einstellung kann man dem Geräte eine andere Sortierung vorgeben, ohne diese im Adressbuch zu ändern.
+sync all addressbooks as one	activesync	de	Alle Adressbücher in eines synchronisieren
+use addressbooks "own sorting" attribute	activesync	de	benutze "eigene Sortierung" des Adressbuchs

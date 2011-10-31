@@ -1,0 +1,168 @@
+IMPORTANT INFO ABOUT THIS VERSION!
+==================================
+
+This version brings AS12.1 and AS14 protocol to your Z-Push installation. Both
+protocols aim to lower the battery usage. Furthermore AS14 brings SMS Sync 
+possibilities. These functionality works currently with ics backend and is not
+included in other backends. In other backends it could break the sync if you 
+enable the sync of SMS items on your device. If you would like to have SMS messages
+propper shown in your Inbox with Webaccess you need to apply one of my patches for
+Zarafa Webaccess. Since I could not test everything but the version for me behaves
+quite stable it got commited as of 28.02.2010 but please keep in mind that I 
+myself say that this version is highly experimental and contains for sure bugs. 
+Maybe even serious once that I did not find during my development / testings. Use
+this version on your own risk and please prepare backups of your data!
+
+If you simply need HTML on Win Mob devices or Server Searches on your device, 
+please use the AS12 Branch that is much more stable than this AS12.1 one!
+
+Windows Mobile 6.1 devices could be brought to AS14 protocol level by installing
+https://update.outlook.com/cabs/OutlookLiveSetup.cab from Microsoft. The cab is
+the one thing to install. Device after installation downloads additional data from
+Microsoft so please take care about how you download this if you don't have a data
+plan for your mobile contract!
+
+The changes in protocol made it necessary to enhance the StateMachine class. Due
+to this change and since I found it personally a bit difficult to keep the state 
+folder clean, I decided to write the state and device specific files to device id
+named folders. The device id never the less is unique and needs to be unique
+so this should not bring problem. Advantage from this is that since there are not 
+that many files in each folder that some routines run quicker. Especially in big 
+installations this should bring advantages. Disadvantage is that you have to resync
+all devices but this never the less occurs since the version contains routines to
+bring devices to their optimum protocol level but please keep in mind that if you
+intend to go back to an older Z-Push Version you need to resync all your devices!
+
+If you would simply like to try this version please do it seperate from your 
+production z-push installation . This can be achived by installing this Z-Push 
+version to a seperate v-host. Afterwards do a complete resync of your device 
+(and devices you'd like to test this version for compatibility) with the new 
+instance. If everything works fine feel free to use this version for production on
+your own risk.
+
+Please take the above serious since I don't have test lab environment. I can only 
+test things with emulators (and I do so with Win Mobile 5.0-6.5, Palm Pre 1.2-1.3,
+Android 1.2). Other real emulators with enabled Mail Push I didn't found out until 
+now. If you have one, please send me the download link ;-). For real devices I 
+currently test on Eton GloFish, T-Mobile MDA Vario 5, Nokia E51 with MfE 2.9.258,
+HTC 4350. In general I use Zarafa 6.30 series with the latest Beta for Backend tests. 
+
+You still can use the production server as the data source but please keep in mind 
+that this could bring problems to your data (although I never experienced this 
+until now!). 
+
+If you experience problems, please include debug.txt file with switched on wbxml 
+output and report bug either to forum or ask in IRC channel #zarafa for my email 
+address. Same applies if you have questions about this version - simply contact
+me.
+
+dw2412
+
+Installing Z-Push
+======================
+
+Requirements
+------------
+
+Z-Push runs on either PHP4 or PHP5 but requires the 'Mail' package from
+PEAR, so you may need to install the php-pear package on your system if it
+has not been preinstalled.
+NOTE: beginning with the version 1.2.2RC z-push includes RFC822.php file, so
+'Mail' package is no longer required.
+
+On some systems, this means you must install the 'php-pear' AND the
+'php-mail' packages, or the packages may even be called something completely
+different. In the end, you're looking for the package with RFC822.php in it.
+
+
+How to install
+--------------
+
+To Install Z-Push, simply untar the z-push tar to your webroot,
+e.g. with
+
+tar -xzvf z-push-<version>.tar.gz -C /var/www
+
+Now, edit the config.php file in the directory to reflect your local system.
+For MAPI use with Zarafa, you needn't change any settings and should work
+as-is.
+
+Please also set your timezone in the config.php file.
+If you don't want to use the Zarafa backend, please move the backend/ics.php 
+file to another folder or delete it. Otherwise, errors regarding the 
+php-mapi extension will be displayed.
+
+Make sure that the 'state' directory is writeable for your webserver
+process, so either change the owner of the 'state' directory to the UID of
+your apache process, or make the directory world writeable:
+
+chmod 777 /var/www/z-push/state
+
+Now, you must configure Apache to redirect the URL
+'Microsoft-Server-ActiveSync' to the index.php file in the Z-Push
+directory. This can be done by adding the line
+
+Alias /Microsoft-Server-ActiveSync /var/www/z-push/index.php
+
+to your httpd.conf file. Make sure that you are adding the line to the
+correct part of your Apache configuration, taking care of virtual hosts and
+other Apache configurations.
+
+*WARNING* You CANNOT simply rename the z-push directory to
+Microsoft-Server-ActiveSync. This will cause Apache to send redirects to the
+PDA, which will definitely break your PDA synchronisation.
+
+Lastly, make sure that PHP has the following settings:
+
+php_flag magic_quotes_gpc off
+php_flag register_globals off
+php_flag magic_quotes_runtime off
+php_flag short_open_tag on
+
+You can set this in the httpd.conf, in php.ini or in an .htaccess file in
+the root of z-push. If you don't set this up correctly, you will not be
+able to login correctly via z-push.
+
+After doing this, you should be able to synchronize from your PDA.
+
+Setting up your PocketPC
+------------------------
+
+This is simply a case of adding an 'exchange server' to your activesync
+server list, specifying the IP address of the Z-Push apache server,
+disabling SSL, unless you have already setup SSL on your Apache server,
+setting the correct username & password (the domain is ignored, you can
+simply specify 'domain' or some other random string), and then going through
+the standard activesync settings.
+
+Once you have done this, you should be able to synchronise your PocketPC
+simply by clicking the 'Sync' button in ActiveSync on your PocketPC.
+
+Troubleshooting
+---------------
+
+Most problems will be caused by incorrect Apache settings. To test whether
+your Apache setup is working correctly, you can simply type the Z-Push URL
+in your browser, to see if apache is correctly redirecting your request to
+z-push. You can simply use:
+
+http://<serverip>/Microsoft-Server-ActiveSync
+
+If correctly configured, you should see a username/password request, and
+when you specify a valid username & password, you should see a string like
+
+"Your device requested the Z-Push URL without the required GET parameters"
+
+If not, then check your PHP and Apache settings.
+
+If you have other synchronisation problems, you can create the file
+'debug.txt' in the root directory of z-push, which should also be
+world-writable:
+
+touch /var/www/z-push/debug.txt
+chmod 777 /var/www/z-push/debug.txt
+
+The debug.txt file will then collect debug information from your
+synchronisation.
+
+
