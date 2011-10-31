@@ -24,7 +24,7 @@
 			'no_exception_handler' => 'errorlog',	// only logs exceptions
 	));
 
-	include('../header.inc.php');
+//	include('../header.inc.php');
 
 	// no need to set default_timezone here, this is done during eGroupware header include.
 
@@ -43,9 +43,11 @@
 		ini_get('include_path'));
 
   // DEPRECIATED USE STATE_PATH! only defined for compatibility
-	define('STATE_DIR', $GLOBALS['egw_info']['server']['files_dir'].'/activesync');
+	//define('STATE_DIR', $GLOBALS['egw_info']['server']['files_dir'].'/activesync');
 	// state dir for active sync as "activesync" subdir EGw's files directory
-	define('STATE_PATH', $GLOBALS['egw_info']['server']['files_dir'].'/activesync');
+	//define('STATE_PATH', $GLOBALS['egw_info']['server']['files_dir'].'/activesync');
+	define('STATE_DIR', BASE_PATH. 'state');
+	define('STATE_PATH', BASE_PATH. 'state');
  	if (!file_exists(STATE_PATH))
  	{
  		mkdir(STATE_DIR,0700,true);
@@ -102,7 +104,8 @@
 	// define("VERIFYCERT_TEMP","tmp/");
 
     // The data providers that we are using (see configuration below)
-    $BACKEND_PROVIDER = "BackendEGW";
+    //$BACKEND_PROVIDER = "BackendEGW";
+    $BACKEND_PROVIDER = "BackendCombined";
 
     // ************************
     //  BackendICS settings
@@ -118,11 +121,11 @@
 
     // Defines the server to which we want to connect
     // recommended to use local servers only
-    define('IMAP_SERVER', 'localhost');
+    define('IMAP_SERVER', 'imap.gmail.com');
     // connecting to default port (143)
-    define('IMAP_PORT', 143);
+    define('IMAP_PORT', 993);
     // best cross-platform compatibility (see http://php.net/imap_open for options)
-    define('IMAP_OPTIONS', '/notls/norsh');
+    define('IMAP_OPTIONS', '/ssl/novalidate-cert');
     // overwrite the "from" header if it isn't set when sending emails
     // options: 'username'    - the username will be set (usefull if your login is equal to your emailaddress)
     //        'domain'    - the value of the "domain" field is used
@@ -130,11 +133,11 @@
     define('IMAP_DEFAULTFROM', '');
     // copy outgoing mail to this folder. If not set z-push will try the default folders
 	// Additionally you have to have a Sent Items folder in case you plan to sync with Nokia MfE Built in client / certain HTC Adnroid devices!
-    define('IMAP_SENTFOLDER', '');
+    define('IMAP_SENTFOLDER', '[Gmail].Sent Mail');
 	// You have to have a Deleted Items folder in case you plan to sync with Nokia MfE Built in client / certain HTC Adnroid devices!
-    define('IMAP_DELETEDITEMSFOLDER', '');
+    define('IMAP_DELETEDITEMSFOLDER', '[Gmail].Trash');
 	// You have to have a Draft folder in case you plan to sync with Nokia MfE Built in client / certain HTC Adnroid devices!
-    define('IMAP_DRAFTSFOLDER', '');
+    define('IMAP_DRAFTSFOLDER', '[Gmail].Drafts');
     // forward messages inline (default off - as attachment)
     define('IMAP_INLINE_FORWARD', false);
     // use imap_mail() to send emails (default) - off uses mail()
@@ -158,19 +161,28 @@
     // **********************
     //  BackendVCDir settings
     // **********************
-    define('VCARDDIR_DIR', '/home/%u/.kde/share/apps/kabc/stdvcf');
+    //define('VCARDDIR_DIR', '/home/%u/.kde/share/apps/kabc/stdvcf');
+    define('VCARDDIR_DIR', BASE_PATH. 'data/%u/vcf');
 
     // **************************
     //  BackendiConDir settings
     // **************************
-    define('ICONDIR_DIR','C:\xampp\htdocs\as12.1\data\%u\iCon');
+    define('ICONDIR_DIR', BASE_PATH. 'data/%u/iCon');
     define('ICONDIR_FOLDERNAME','Tobit Kontakte');
 
     // **************************
     //  BackendiCalDir settings
     // **************************
-    define('ICALDIR_DIR','C:\xampp\htdocs\as12.1\data\%u\iCal');
+    define('ICALDIR_DIR', BASE_PATH. 'data/%u/iCal');
     define('ICALDIR_FOLDERNAME','Calendar');
+
+    // ******************************
+    //  BackendCalDAV settings
+    // ******************************
+    // %u is replaced by the username
+    define('CALDAV_SERVER' , 'https://www.google.com');
+    define('CALDAV_PORT'   , '443');
+    define('CALDAV_PATH'   , '/calendar/dav/%u/events/');
 
     // **************************
     //  BackendCombined settings
@@ -184,10 +196,10 @@
                 'name' => 'BackendIMAP',
             ),
             'v' => array(
-                'name' => 'BackendiConDir',
+                'name' => 'BackendGContacts',
             ),
             'c' => array(
-                'name' => 'BackendiCalDir',
+                'name' => 'BackendCalDav',
             ),
         ),
         'delimiter' => '/',
@@ -195,6 +207,5 @@
         'rootcreatefolderbackend' => 'i',
 	))
     );
-
 
 ?>
