@@ -1,4 +1,6 @@
 <?php
+//http://www.ibm.com/developerworks/forums/thread.jspa?messageID=14476692
+
 /***********************************************
 * File      :   gcontacts.php
 * Project   :   Z-Push
@@ -710,8 +712,9 @@ class BackendGcontacts extends BackendDiff {
 		debugLog("GContacts::DeleteMessage - $id deleted");
 	} catch (Exception $e) {
 		debugLog("GContacts::DeleteMessage - ERROR! (" . $e->getMessage() . ")");
+		return false;
 	}
-	return false;
+	return true;
     }
 
     function SetReadFlag($folderid, $id, $flags) {
@@ -721,7 +724,7 @@ class BackendGcontacts extends BackendDiff {
     function ChangeMessage($folderid, $id, $message) {
         debugLog('GContacts::ChangeMessage('.$folderid.', '.$this->_items[$id].', ..)');
         
-        //$this->service->enableRequestDebugLogging(STATE_DIR. '/zendlog.txt'); //non mi funziona
+        $this->service->enableRequestDebugLogging(STATE_DIR. '/zendlog.txt'); //non mi funziona
 
 	//if no ID given -> create new event
 	//if ID given -> load old event, modify it, save it
@@ -789,13 +792,21 @@ class BackendGcontacts extends BackendDiff {
 	try {
 		$newEntry = NULL;
 		if(!empty($id)) {
-			$newEntry = $this->service->updateEntry($xml->saveXML(), $entry->getEditLink()->href);
+			$extra_header = array();
+			$extra_header['If-Match']='*';
+			//$extra_header = array('If-Match'=>'*');
+			$newEntry = $this->service->updateEntry($xml->saveXML(), $entry->getEditLink()->href,null,$extra_header);
 		} else {
 			$newEntry = $this->service->insertEntry($doc->saveXML(), GCONTACTS_URL);
-			//file_put_contents("obj_dump.txt", serialize($newEntry) . "\n", FILE_APPEND);
+			file_put_contents(STATE_DIR."obj_dump.txt", serialize($newEntry) . "\n", FILE_APPEND);
 		}
+		
+		//filter out real contact id without other garbage
+		preg_match("/[_a-z0-9]+$/", $newEntry->id, $matches);
+		$contactid = $matches[0];
+
 		$m = Array();
-		$m["id"] = (string)$newEntry->id;
+		$m["id"] = (string)$contactid;
 		$m["flags"] = "1";
 		$m["mod"] = strtotime((string)$newEntry->getUpdated());
 		debugLog("GCalendar::ChangeMessage - Inserted Entry: ".$m['id']);
