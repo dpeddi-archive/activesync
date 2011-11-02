@@ -737,14 +737,14 @@ class BackendGcontacts extends BackendDiff {
 		  $entry = $this->service->getEntry($query);
 		  $xml = simplexml_load_string($entry->getXML());
 		
-        	  if(!empty($message->fileas)){
-            		$xml->name->fullName = u2wi($message->fileas);
+		  if(!empty($message->fileas)){
+		    $xml->name->fullName = u2wi($message->fileas);
 		  }
 		  if (!empty($message->firstname)){
-            		$xml->name->givenName = u2wi($message->firstname);
+			$xml->name->givenName = u2wi($message->firstname);
 		    }
 		  if (!empty($message->lastname)){
-            		$xml->name->familyName = u2wi($message->lastname);
+			$xml->name->familyName = u2wi($message->lastname);
 		  }
 
 		    if (!empty($message->companyname)){
@@ -758,13 +758,32 @@ class BackendGcontacts extends BackendDiff {
 			$xml->nickname = u2wi($message->nickname);
 		    }
 
-		  
-		  // change primary email address  
-		 // foreach ($xml->email as $email) {
-		//    if (isset($email['primary'])) {
-		//		$email['address'] = 'jr@example.com';  
-		//    }  
-		  //}
+		    foreach ($xml->email as $email) {
+			preg_match("/[_a-z0-9]+$/", $email['rel'], $matches);
+			$rel = $matches[0];
+			
+			//isset($email['primary']
+			switch ($rel) {
+			    case 'home':
+					if (!empty($message->email1address)) {
+						$email['address'] = $message->email1address;
+					}
+				break;
+			    case 'work':
+					if (!empty($message->email2address)) {
+						$email['address'] = $message->email2address;
+					}
+				break;
+			    case 'other':
+					if (!empty($message->email3address)) {
+						$email['address'] = $message->email3address;
+					}
+				break;
+			//    default:
+			//	break;
+			}
+			
+		    }
 		  
 		  // update entry
 		} catch (Exception $e) {
@@ -781,26 +800,58 @@ class BackendGcontacts extends BackendDiff {
 		  $entry->setAttributeNS('http://www.w3.org/2000/xmlns/' ,
 		   'xmlns:gd', 'http://schemas.google.com/g/2005');
 		  $doc->appendChild($entry);
-		  
+
 		  // add name element
 		  $name = $doc->createElement('gd:name');
 		  $entry->appendChild($name);
 		  $fullName = $doc->createElement('gd:fullName', u2wi($message->fileas) );
 		  $name->appendChild($fullName);
+
+		  if (!empty($message->firstname)){
+		    $givenName = $doc->createElement('gd:givenName', u2wi($message->firstname) );
+		    $name->appendChild($givenName);
+		  }
+
+		  if (!empty($message->lastname)){
+		    $familyName = $doc->createElement('gd:familyName', u2wi($message->lastname) );
+		    $name->appendChild($familyName);
+		  }
 		  
 		  // add email element
-		  $email = $doc->createElement('gd:email');
-		  $email->setAttribute('address' ,'jack.frost@example.com');
-		  $email->setAttribute('rel' ,'http://schemas.google.com/g/2005#home');
-		  $entry->appendChild($email);
-		  
+		  if (!empty($message->email1address)) {
+		    $email = $doc->createElement('gd:email');
+		    $email->setAttribute('address' , u2wi($message->email1address));
+		    $email->setAttribute('rel' ,'http://schemas.google.com/g/2005#home');
+		    $entry->appendChild($email);
+		  }
+		  if (!empty($message->email2address)) {
+		    $email = $doc->createElement('gd:email');
+		    $email->setAttribute('address' , u2wi($message->email2address));
+		    $email->setAttribute('rel' ,'http://schemas.google.com/g/2005#work');
+		    $entry->appendChild($email);
+		  }
+
+		  if (!empty($message->email3address)) {
+		    $email = $doc->createElement('gd:email');
+		    $email->setAttribute('address' , u2wi($message->email3address));
+		    $email->setAttribute('rel' ,'http://schemas.google.com/g/2005#other');
+		    $entry->appendChild($email);
+		  }
+
 		  // add org name element
 		  $org = $doc->createElement('gd:organization');
 		  $org->setAttribute('rel' ,'http://schemas.google.com/g/2005#work');
 		  $entry->appendChild($org);
-		  $orgName = $doc->createElement('gd:orgName', 'Winter Inc.');
-		  $org->appendChild($orgName);
-		  
+
+		  if (!empty($message->companyname)){
+		    $orgName = $doc->createElement('gd:orgName', $message->companyname);
+		    $org->appendChild($orgName);
+		  }
+		  if (!empty($message->jobtitle)){
+		    $orgName = $doc->createElement('gd:orgTitle', $message->jobtitle);
+		    $org->appendChild($orgName);
+		  }
+
 		} catch (Exception $e) {
 		    debugLog("GContacts::ChangeMessage - ERROR! (" . $e->getMessage() . ")");
     		    return false;
@@ -816,7 +867,7 @@ class BackendGcontacts extends BackendDiff {
 			$newEntry = $this->service->updateEntry($xml->saveXML(), $entry->getEditLink()->href,null,$extra_header);
 		} else {
 			$newEntry = $this->service->insertEntry($doc->saveXML(), GCONTACTS_URL);
-			file_put_contents(STATE_DIR."obj_dump.txt", serialize($newEntry) . "\n", FILE_APPEND);
+			file_put_contents(STATE_DIR."/obj_dump.txt", serialize($newEntry) . "\n", FILE_APPEND);
 		}
 		
 		//filter out real contact id without other garbage
