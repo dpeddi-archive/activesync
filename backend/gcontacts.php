@@ -740,6 +740,24 @@ class BackendGcontacts extends BackendDiff {
         	  if(!empty($message->fileas)){
             		$xml->name->fullName = u2wi($message->fileas);
 		  }
+		  if (!empty($message->firstname)){
+            		$xml->name->givenName = u2wi($message->firstname);
+		    }
+		  if (!empty($message->lastname)){
+            		$xml->name->familyName = u2wi($message->lastname);
+		  }
+
+		    if (!empty($message->companyname)){
+			$xml->organization->orgName = u2wi($message->companyname);
+		    }
+		    if (!empty($message->jobtitle)){
+			$xml->organization->orgTitle = u2wi($message->jobtitle);
+		    }
+
+		    if (!empty($message->nickname)){
+			$xml->nickname = u2wi($message->nickname);
+		    }
+
 		  
 		  // change primary email address  
 		 // foreach ($xml->email as $email) {
