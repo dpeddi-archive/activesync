@@ -1,6 +1,4 @@
 <?php
-//http://www.ibm.com/developerworks/forums/thread.jspa?messageID=14476692
-
 /***********************************************
 * File      :   gcontacts.php
 * Project   :   Z-Push
@@ -215,25 +213,29 @@ class BackendGcontacts extends BackendDiff {
 	// parse feed and extract contact information
 	// into simpler objects
 	try {
+		    $doc = new DOMDocument();
+		    $doc->formatOutput = true;
+
 	    	    //$obj = new stdClass;
 	    	    //$obj->edit = $entry->getEditLink()->href;
 		    $xmldata = $entry->getXML();
+		    $doc->loadXML($xmldata);
 		    
 		    //filter out real contact id without other garbage
 		    preg_match("/[_a-z0-9]+$/", $entry->id, $matches);
 		    $contactid = $matches[0];
 
 		    $fh = fopen(STATE_DIR.'/xml/'.(string) $entry->title.'_'.(string) $contactid.'.xml', 'w');
-		    fwrite($fh,$xmldata);
+		    fwrite($fh,$doc->saveXML());
 	            $xml = simplexml_load_string($xmldata);
 		    fclose($fh);
 
 		    
 		    //Prefix:	
-		    //First:	 primo
+		    //givenName:	 ok
 		    //Middle:	
-		    //Last:	
-		    //Suffix:	
+		    //familyName:		ok
+		    //nameSuffix:	ok
 		    
 		    //last
 		    //first
@@ -246,30 +248,30 @@ class BackendGcontacts extends BackendDiff {
 		        $message->fileas = w2ui($xml->name->fullName);
 		    }
 
-		    if (!empty($xml->name->givenName)){
-			debugLog('givenName: '.(string) $xml->name->givenName);
-			$message->firstname = w2ui($xml->name->givenName);
-		    }
-
 		//    if (!empty($xml->name->namePrefix)){
 		//	debugLog('namePrefix: '.(string) $xml->name->namePrefix);
 		//	$message->middlename = w2ui($xml->name->namePrefix);
 		//    }
 		
-		    if (!empty($xml->name->familyName)){
-			debugLog('familyName: '.(string) $xml->name->familyName);
-			$message->lastname = w2ui($xml->name->familyName);
+		    if (!empty($xml->name->givenName)){
+			debugLog('givenName: '.(string) $xml->name->givenName);
+			$message->firstname = w2ui($xml->name->givenName);
 		    }
-
-		    //if (!empty($xml->name->????)){
-		//	debugLog('familyName: '.(string) $xml->name->????);
-		//	$message->suffix = w2ui($xml->name->^^^^);
-		//    }
 
 		    //if (!empty($xml->name->????)){
 		//	debugLog('familyName: '.(string) $xml->name->????);
 		//	$message->title = w2ui($xml->name->^^^^);
 		//    }
+
+		    if (!empty($xml->name->familyName)){
+			debugLog('familyName: '.(string) $xml->name->familyName);
+			$message->lastname = w2ui($xml->name->familyName);
+		    }
+
+		    if (!empty($xml->name->nameSuffix)){
+			debugLog('nameSuffix: '.(string) $xml->name->nameSuffix);
+			$message->suffix = w2ui($xml->name->nameSuffix);
+		    }
 
 		    if (!empty($xml->organization->orgName)){
 			debugLog('orgName: '.(string) $xml->organization->orgName);
@@ -310,7 +312,6 @@ class BackendGcontacts extends BackendDiff {
 			    debugLog('LOST im address: '.(string) $i['address']);
 			}
 	            }
-
 		    
 	            foreach ($xml->structuredPostalAddress as $p) {
 	        	preg_match("/[_a-z0-9]+$/", $p['rel'], $matches);
@@ -721,42 +722,268 @@ class BackendGcontacts extends BackendDiff {
         return false;
     }
 
-    function ChangeMessage($folderid, $id, $message) {
-        debugLog('GContacts::ChangeMessage('.$folderid.', '.$this->_items[$id].', ..)');
-        
-        $this->service->enableRequestDebugLogging(STATE_DIR. '/zendlog.txt'); //non mi funziona
+//bfun
+  function AtoX($array, $DOM=null, $root=null){
 
+    if($DOM  == null){$DOM  = new DOMDocument('1.0', 'iso-8859-1');}
+    if($root == null){$root = $DOM->appendChild($DOM->createElement('root'));}
+
+    if(is_array($array)){
+        // get the attributes first.;
+        if(isset($array['@attributes'])) {
+             foreach($array['@attributes'] as $key => $value) {
+                    $root->setAttribute($key,$value);
+             }
+             unset($array['@attributes']); //remove the key from the array once done.
+        }
+        if(isset($array['@value'])) {
+//		print "Debug ".$array['@value']." ".$root->tagName." xx\n";
+//		print "Debug ".$array['@value']." ".$root->childNodes->length." xx\n";
+//		print "Debug ".$array['@value']." ".$root->parentNode->tagName." xx\n";
+//		print "Debug ".$array['@value']." ".$root->parentNode->childNodes->length." xx\n";
+//		print "Debug ".$array['@value']." ".$root->getAttribute('rel')." xx ".$attributes['rel']."xx\n";
+              if ($root->childNodes->length == 0) {
+                      if (!empty($array['@value'])) {
+			  debugLog("GContacts::ChangeMessage - create node for ".$root->tagName." => ".$array['@value']);
+                          $root->appendChild($DOM->createTextNode($array['@value']));
+                      }
+		} else {
+			if (!empty($array['@value'])) {
+			    //assegna
+			    debugLog("GContacts::ChangeMessage - assign value to ".$root->tagName." => ".$array['@value']);
+			    $root->nodeValue = $array['@value'];
+			} else {
+			    //cancella
+			    debugLog("GContacts::ChangeMessage - remove element ".$root->tagName);
+			    $root->parentNode->removeChild($root);
+			}
+		}
+              unset($array['@value']);    //remove the key from the array once done.
+              //return from recursion, as a note with value cannot have child nodes.
+        } else if (isset($array['@CDATA'])) {
+              $root->appendChild($DOM->createCDATASection($array['@cdata']));
+              unset($array['@value']);    //remove the key from the array once done.
+              //return from recursion, as a note with value cannot have child nodes.
+        }
+    }
+
+    //create subnodes using recursion
+    if(is_array($array)){
+         // recurse to get the node for that key
+         foreach($array as $key=>$value){
+              if(is_array($value) && isset($value[0])) {
+                    // MORE THAN ONE NODE OF ITS KIND;
+                    // if the new array is numeric index, means it is array of nodes of the same kind
+                    // it should follow the parent key name
+                    foreach($value as $k=>$v){
+			$subroot = NULL;
+			foreach ($DOM->getElementsByTagName($key) as $item) {
+				$rel = (isset($v['@attributes']) && isset($v['@attributes']['rel']))?$v['@attributes']['rel']:NULL;
+				//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
+				if ($rel == $item->getAttribute('rel')) {
+				    debugLog("GContacts::ChangeMessage - assign Element ".$key);
+				    $subroot = $item;
+				    break;
+				}
+			}
+
+			if (!isset($subroot)) {
+			        debugLog("GContacts::ChangeMessage - create element ".$key);
+                                $subroot = $root->appendChild($DOM->createElement($key));
+                        }
+                        AtoX($v, $DOM, $subroot);
+                    }
+              } else {
+                    // ONLY ONE NODE OF ITS KIND
+		    $subroot = NULL;
+		    foreach ($DOM->getElementsByTagName($key) as $item) {
+			$rel = (isset($value['@attributes']) && isset($value['@attributes']['rel']))?$value['@attributes']['rel']:NULL;
+			//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
+			if ($rel == $item->getAttribute('rel')) {
+			    debugLog("GContacts::ChangeMessage - assign Element ".$key);
+			    $subroot = $item;
+			    break;
+			}
+		    }
+
+		    if (!isset($subroot)) {
+			    debugLog("GContacts::ChangeMessage - create element ".$key);
+                         $subroot = $root->appendChild($DOM->createElement($key));
+                    }
+                    AtoX($value, $DOM, $subroot);
+              }
+              unset($array[$key]); //remove the key from the array once done.
+         }
+    }
+    if(!is_array($array)) {
+        $subroot = $root->appendChild($DOM->createTextNode($array));
+        //AtoX($array, $DOM, $subroot);
+    }
+
+    return $DOM;
+  }
+
+//efun
+
+    function ChangeMessage($folderid, $id, $message) {
+
+        debugLog('GContacts::ChangeMessage('.$folderid.', '.$this->_items[$id].', ..)');
+
+	$this->service->enableRequestDebugLogging(STATE_DIR. '/zendlog.txt'); //non mi funziona
+
+	$doc  = new DOMDocument();
+	$doc->formatOutput = true;
+
+//bmain
+
+	$xmlns2005='http://schemas.google.com/g/2005';
+	$xmlns2008='http://schemas.google.com/contact/2008';
+
+$atomentry = array (
+    'name' => array (
+        '@attributes' => array( 'xmlns' => $xmlns2005, ),
+	'givenName' => array(
+	    '@value' => u2wi($message->firstname),
+	),
+	'familyName' => array(
+	    '@value' => u2wi($message->lastname),
+	),
+	'nameSuffix' => array(
+	    '@value' => u2wi($message->suffix),
+	),
+    ),
+    'organization' => array (
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#other", ),
+	'orgName' => array(
+	    '@value' => u2wi($message->companyname),
+	),
+	'orgTitle' => array(
+	    '@value' => u2wi($message->jobtitle),
+	),
+    ),
+    'nickname' => array (
+	'@attributes' => array( 'xmlns' => $xmlns2008, ),
+	'@value' => u2wi($message->nickname),
+    ),
+    'birthday' => array (
+	'@attributes' => array ( 'xmlns' => $xmlns2008, 
+	'when' => u2wi($message->birthday),
+	),
+    ),
+    'event' =>  array (
+	'@attributes' => array ( 'xmlns' => $xmlns2005, 'rel' => 'anniversary','xmlns:default'=>"http://schemas.google.com/g/2005" ),
+	'default:when' => array(
+	    '@attributes' => array( 
+	    'startTime' => u2wi($message->anniversary),
+            ),
+	),
+    ),
+	//    '@attributes' => array ( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005.'#home',),
+    'structuredPostalAddress' =>  array (
+	array (
+    	    '@attributes' => array ( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005.'#home',),
+	    'formattedAddress' => 'Via Boschette 18
+Marcon
+VE
+30020
+Italia',
+	    'street'=>'Via Boschette 18',
+	    'postcode'=>'30020',
+	    'city'=>'Marcon',
+	    'region'=>'VE',
+	    'country'=>'Italia',
+	),
+	array (
+	    '@attributes' => array ( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005.'#work',),
+	    'street'=>'Via Boschette 18',
+	),
+    ),
+    'phoneNumber' => array (
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#home", ),
+	'@value' => '1',//u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#work", ),
+	'@value' => '2',//u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#mobile", ),
+	'@value' => u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#pager", ),
+	'@value' => '3',//u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#other", ),
+	'@value' => '4',//u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#home_fax", ),
+	'@value' => '5',//u2wi($message->mobilephonenumber),
+       ),
+       array(
+        '@attributes' => array( 'xmlns' => $xmlns2005, 'rel' => $xmlns2005."#work_fax", ),
+	'@value' => '6',//u2wi($message->mobilephonenumber),
+       ),
+    ),
+);
 	//if no ID given -> create new event
 	//if ID given -> load old event, modify it, save it
+
 	if(!empty($id)) {
 
 		try {
+		  debugLog("GContacts::ChangeMessage - Import data from existing contact");
 		
 		  // perform query and get entry
 		  $query = new Zend_Gdata_Query(GCONTACTS_URL .'/'. $id);
 		  $entry = $this->service->getEntry($query);
-		  $xml = simplexml_load_string($entry->getXML());
-		
-		  if(!empty($message->fileas)){
-		    $xml->name->fullName = u2wi($message->fileas);
-		  }
-		  if (!empty($message->firstname)){
-			$xml->name->givenName = u2wi($message->firstname);
-		    }
-		  if (!empty($message->lastname)){
-			$xml->name->familyName = u2wi($message->lastname);
-		  }
 
-		    if (!empty($message->companyname)){
-			$xml->organization->orgName = u2wi($message->companyname);
-		    }
-		    if (!empty($message->jobtitle)){
-			$xml->organization->orgTitle = u2wi($message->jobtitle);
-		    }
+		  $success = $doc->loadXML($entry->getXML()); // creo le stesse strutture
 
-		    if (!empty($message->nickname)){
-			$xml->nickname = u2wi($message->nickname);
-		    }
+		  //$xml = simplexml_load_string($entry->getXML());
+		  $root = $doc->getElementsByTagName("entry")->item(0);
+
+		} catch (Exception $e) {
+		    debugLog("GContacts::ChangeMessage - ERROR! (" . $e->getMessage() . ")");
+		}
+
+	} else {
+		try {
+		  debugLog("GContacts::ChangeMessage - Creating atom:entry structure");
+                  if ($doc->getElementsByTagName("entry")->length == 0 ) {
+		  // create new entry
+		  $entry = $doc->createElement('atom:entry');
+		  $entry->setAttributeNS('http://www.w3.org/2000/xmlns/' ,
+		   'xmlns:atom', 'http://www.w3.org/2005/Atom');
+		  $entry->setAttributeNS('http://www.w3.org/2000/xmlns/' ,
+		   'xmlns:gd', 'http://schemas.google.com/g/2005');
+		  $root = $doc->appendChild($entry);
+                  } else {
+		     //only for internal debug
+                     $root = $doc->getElementsByTagName("entry")->item(0);
+                  }
+
+		} catch (Exception $e) {
+		    debugLog("GContacts::ChangeMessage - ERROR! (" . $e->getMessage() . ")");
+		    return false;
+		}
+	}
+
+	$doc = AtoX($atomentry, $doc, $root);
+
+
+//emain
+
+/*
+	
+	if(!empty($message->fileas)){
+		$xml->name->fullName = u2wi($message->fileas);
+	} else {
+		$x= 1;
+	}
 
 		    foreach ($xml->email as $email) {
 			preg_match("/[_a-z0-9]+$/", $email['rel'], $matches);
@@ -785,39 +1012,8 @@ class BackendGcontacts extends BackendDiff {
 			
 		    }
 		  
-		  // update entry
-		} catch (Exception $e) {
-		    debugLog("GContacts::ChangeMessage - ERROR! (" . $e->getMessage() . ")");
-		}
-	} else {
-		try {
-		  // create new entry
-		  $doc  = new DOMDocument();
-		  $doc->formatOutput = true;
-		  $entry = $doc->createElement('atom:entry');
-		  $entry->setAttributeNS('http://www.w3.org/2000/xmlns/' ,
-		   'xmlns:atom', 'http://www.w3.org/2005/Atom');
-		  $entry->setAttributeNS('http://www.w3.org/2000/xmlns/' ,
-		   'xmlns:gd', 'http://schemas.google.com/g/2005');
-		  $doc->appendChild($entry);
-
-		  // add name element
-		  $name = $doc->createElement('gd:name');
-		  $entry->appendChild($name);
-		  $fullName = $doc->createElement('gd:fullName', u2wi($message->fileas) );
-		  $name->appendChild($fullName);
-
-		  if (!empty($message->firstname)){
-		    $givenName = $doc->createElement('gd:givenName', u2wi($message->firstname) );
-		    $name->appendChild($givenName);
-		  }
-
-		  if (!empty($message->lastname)){
-		    $familyName = $doc->createElement('gd:familyName', u2wi($message->lastname) );
-		    $name->appendChild($familyName);
-		  }
-		  
-		  // add email element
+*/
+/*		  // add email element
 		  if (!empty($message->email1address)) {
 		    $email = $doc->createElement('gd:email');
 		    $email->setAttribute('address' , u2wi($message->email1address));
@@ -830,7 +1026,6 @@ class BackendGcontacts extends BackendDiff {
 		    $email->setAttribute('rel' ,'http://schemas.google.com/g/2005#work');
 		    $entry->appendChild($email);
 		  }
-
 		  if (!empty($message->email3address)) {
 		    $email = $doc->createElement('gd:email');
 		    $email->setAttribute('address' , u2wi($message->email3address));
@@ -838,25 +1033,9 @@ class BackendGcontacts extends BackendDiff {
 		    $entry->appendChild($email);
 		  }
 
-		  // add org name element
-		  $org = $doc->createElement('gd:organization');
-		  $org->setAttribute('rel' ,'http://schemas.google.com/g/2005#work');
-		  $entry->appendChild($org);
+*/
 
-		  if (!empty($message->companyname)){
-		    $orgName = $doc->createElement('gd:orgName', $message->companyname);
-		    $org->appendChild($orgName);
-		  }
-		  if (!empty($message->jobtitle)){
-		    $orgName = $doc->createElement('gd:orgTitle', $message->jobtitle);
-		    $org->appendChild($orgName);
-		  }
 
-		} catch (Exception $e) {
-		    debugLog("GContacts::ChangeMessage - ERROR! (" . $e->getMessage() . ")");
-    		    return false;
-		}
-	}
 
 	try {
 		$newEntry = NULL;
@@ -864,10 +1043,11 @@ class BackendGcontacts extends BackendDiff {
 			$extra_header = array();
 			$extra_header['If-Match']='*';
 			//$extra_header = array('If-Match'=>'*');
-			$newEntry = $this->service->updateEntry($xml->saveXML(), $entry->getEditLink()->href,null,$extra_header);
+			$newEntry = $this->service->updateEntry($doc->saveXML(), $entry->getEditLink()->href,null,$extra_header);
+			file_put_contents(STATE_DIR."/obj_updateEntry_dump.txt", serialize($newEntry) . "\n\n", FILE_APPEND);
 		} else {
 			$newEntry = $this->service->insertEntry($doc->saveXML(), GCONTACTS_URL);
-			file_put_contents(STATE_DIR."/obj_dump.txt", serialize($newEntry) . "\n", FILE_APPEND);
+			file_put_contents(STATE_DIR."/obj_insertEntry_dump.txt", serialize($newEntry) . "\n\n", FILE_APPEND);
 		}
 		
 		//filter out real contact id without other garbage
@@ -1037,5 +1217,6 @@ class BackendGcontacts extends BackendDiff {
         $data = str_replace(array('\\\\', '\\;', '\\,', '\\n','\\N'),array('\\', ';', ',', "\n", "\n"),$data);
         return $data;
     }
+
 };
 ?>
