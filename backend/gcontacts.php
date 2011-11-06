@@ -725,8 +725,14 @@ class BackendGcontacts extends BackendDiff {
 //bfun
   function AtoX($array, $DOM=null, $root=null){
 
-    if($DOM  == null){$DOM  = new DOMDocument('1.0', 'iso-8859-1');}
-    if($root == null){$root = $DOM->appendChild($DOM->createElement('root'));}
+//	print "Debug ".$array['@value']." ".$root->tagName." xx\n";
+//	print "Debug ".$array['@value']." ".$root->childNodes->length." xx\n";
+//	print "Debug ".$array['@value']." ".$root->parentNode->tagName." xx\n";
+//	print "Debug ".$array['@value']." ".$root->parentNode->childNodes->length." xx\n";
+//	print "Debug ".$array['@value']." ".$root->getAttribute('rel')." xx ".$attributes['rel']."xx\n";
+
+	if($DOM  == null){$DOM  = new DOMDocument('1.0', 'iso-8859-1');}
+	if($root == null){$root = $DOM->appendChild($DOM->createElement('root'));}
 
     if(is_array($array)){
         // get the attributes first.;
@@ -737,11 +743,6 @@ class BackendGcontacts extends BackendDiff {
              unset($array['@attributes']); //remove the key from the array once done.
         }
         if(isset($array['@value'])) {
-//		print "Debug ".$array['@value']." ".$root->tagName." xx\n";
-//		print "Debug ".$array['@value']." ".$root->childNodes->length." xx\n";
-//		print "Debug ".$array['@value']." ".$root->parentNode->tagName." xx\n";
-//		print "Debug ".$array['@value']." ".$root->parentNode->childNodes->length." xx\n";
-//		print "Debug ".$array['@value']." ".$root->getAttribute('rel')." xx ".$attributes['rel']."xx\n";
               if ($root->childNodes->length == 0) {
                       if (!empty($array['@value'])) {
 			  debugLog("GContacts::ChangeMessage - create node for ".$root->tagName." => ".$array['@value']);
@@ -775,20 +776,29 @@ class BackendGcontacts extends BackendDiff {
                     // MORE THAN ONE NODE OF ITS KIND;
                     // if the new array is numeric index, means it is array of nodes of the same kind
                     // it should follow the parent key name
+//print "DEBUGDEBUG#1 $key $subroot->tagName ".$subroot->getAttribute('rel')."\n";
                     foreach($value as $k=>$v){
-			$subroot = NULL;
-			foreach ($DOM->getElementsByTagName($key) as $item) {
-				$rel = (isset($v['@attributes']) && isset($v['@attributes']['rel']))?$v['@attributes']['rel']:NULL;
-				//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
-				if ($rel == $item->getAttribute('rel')) {
-				    debugLog("GContacts::ChangeMessage - assign Element ".$key);
-				    $subroot = $item;
-				    break;
-				}
-			}
 
+			$subroot = NULL;
+//print "DEBUGDEBUG#2 $key $root->tagName $root->nodeName\n";
+			if($root->childNodes->length) {
+			    foreach($root->childNodes as $item) {
+				if ($item->tagName == $key) {
+				    $rel = (isset($v['@attributes']) && isset($v['@attributes']['rel']))?$v['@attributes']['rel']:NULL;
+				    //debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
+				    if ($rel == $item->getAttribute('rel')) {
+				        debugLog("GContacts::ChangeMessage - assign Element ".$key);
+				        $subroot = $item;
+					print "DEBUGDEBUG#3 $key $item->nodeName\n";
+				        break;
+				    }
+				    //$headline[$i->nodeName] = $i->nodeValue;
+
+				}
+			    }
+			}
 			if (!isset($subroot)) {
-			        debugLog("GContacts::ChangeMessage - create element ".$key);
+			        debugLog("GContacts::ChangeMessage - #1 create element ".$key);
                                 $subroot = $root->appendChild($DOM->createElement($key));
                         }
                         AtoX($v, $DOM, $subroot);
@@ -796,18 +806,22 @@ class BackendGcontacts extends BackendDiff {
               } else {
                     // ONLY ONE NODE OF ITS KIND
 		    $subroot = NULL;
-		    foreach ($DOM->getElementsByTagName($key) as $item) {
-			$rel = (isset($value['@attributes']) && isset($value['@attributes']['rel']))?$value['@attributes']['rel']:NULL;
-			//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
-			if ($rel == $item->getAttribute('rel')) {
-			    debugLog("GContacts::ChangeMessage - assign Element ".$key);
-			    $subroot = $item;
-			    break;
+		    if($root->childNodes->length) {
+			foreach($root->childNodes as $item) {
+			    if ($item->tagName == $key) {
+				$rel = (isset($value['@attributes']) && isset($value['@attributes']['rel']))?$value['@attributes']['rel']:NULL;
+				//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
+				if ($rel == $item->getAttribute('rel')) {
+				    debugLog("GContacts::ChangeMessage - assign Element ".$key);
+				    $subroot = $item;
+				    break;
+				}
+			    }
 			}
 		    }
 
 		    if (!isset($subroot)) {
-			    debugLog("GContacts::ChangeMessage - create element ".$key);
+			    debugLog("GContacts::ChangeMessage - #2 create element ".$key);
                          $subroot = $root->appendChild($DOM->createElement($key));
                     }
                     AtoX($value, $DOM, $subroot);
