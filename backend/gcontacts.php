@@ -783,7 +783,7 @@ class BackendGcontacts extends BackendDiff {
 //print "DEBUGDEBUG#2 $key $root->tagName $root->nodeName\n";
 			if($root->childNodes->length) {
 			    foreach($root->childNodes as $item) {
-				if ($item->tagName == $key) {
+				if ($item->nodeName == $key) {
 				    $rel = (isset($v['@attributes']) && isset($v['@attributes']['rel']))?$v['@attributes']['rel']:NULL;
 				    //debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
 				    if ($rel == $item->getAttribute('rel')) {
@@ -808,7 +808,7 @@ class BackendGcontacts extends BackendDiff {
 		    $subroot = NULL;
 		    if($root->childNodes->length) {
 			foreach($root->childNodes as $item) {
-			    if ($item->tagName == $key) {
+			    if ($item->nodeName == $key) {
 				$rel = (isset($value['@attributes']) && isset($value['@attributes']['rel']))?$value['@attributes']['rel']:NULL;
 				//debugLog("GContacts::ChangeMessage - ".$item->tagName." arrayREL:".$rel. " domREL:". $item->getAttribute('rel'));
 				if ($rel == $item->getAttribute('rel')) {
@@ -830,8 +830,22 @@ class BackendGcontacts extends BackendDiff {
          }
     }
     if(!is_array($array)) {
-        $subroot = $root->appendChild($DOM->createTextNode($array));
-        //AtoX($array, $DOM, $subroot);
+      if ($root->childNodes->length == 0) {
+                      if (!empty($array)) {
+			  debugLog("GContacts::ChangeMessage - create node for ".$root->tagName." => ".$array);
+                          $root->appendChild($DOM->createTextNode($array['@value']));
+                      }
+	} else {
+		if (!empty($array)) {
+		    //assegna
+		    debugLog("GContacts::ChangeMessage - assign value to ".$root->tagName." => ".$array);
+		    $root->nodeValue = $array;
+		} else {
+		    //cancella
+		    debugLog("GContacts::ChangeMessage - remove element ".$root->tagName);
+		    $root->parentNode->removeChild($root);
+		}
+	}
     }
 
     return $DOM;
