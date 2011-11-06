@@ -42,6 +42,15 @@ function AtoX($array, $DOM=null, $root=null){
 			foreach($array['@attributes'] as $key => $value) {
 				$root->setAttribute($key,$value);
 			}
+			if ((isset($array['@attributes']['when']) && empty($array['@attributes']['when'])) || 
+			    (isset($array['@attributes']['href']) && empty($array['@attributes']['href'])) ||
+			    (isset($array['@attributes']['value']) && empty($array['@attributes']['value'])) ||
+			    (isset($array['@attributes']['startTime']) && empty($array['@attributes']['startTime'])) ||
+			    (isset($array['@attributes']['address']) && empty($array['@attributes']['address'])) ) {
+				//cancella
+				debugLog("GContacts::ChangeMessage - #1 remove element ".$root->tagName);
+				$root->parentNode->removeChild($root);
+			}
 			unset($array['@attributes']); //remove the key from the array once done.
 		}
 		if(isset($array['@value'])) {
@@ -49,6 +58,10 @@ function AtoX($array, $DOM=null, $root=null){
 				if (!empty($array['@value'])) {
 					debugLog("GContacts::ChangeMessage - #1 create node for ".$root->tagName." => ".$array['@value']);
 					$root->appendChild($DOM->createTextNode($array['@value']));
+				} else {
+					//cancella
+					debugLog("GContacts::ChangeMessage - #1 remove element ".$root->tagName);
+					$root->parentNode->removeChild($root);
 				}
 			} else {
 				if (!empty($array['@value'])) {
@@ -135,6 +148,10 @@ function AtoX($array, $DOM=null, $root=null){
 			if (!empty($array)) {
 				debugLog("GContacts::ChangeMessage - #4 create node for ".$root->tagName." => ".$array);
 				$root->appendChild($DOM->createTextNode($array['@value']));
+			} else {
+				//cancella
+				debugLog("GContacts::ChangeMessage - #4 remove element ".$root->tagName);
+				$root->parentNode->removeChild($root);
 			}
 		} else {
 			if (!empty($array)) {
@@ -451,7 +468,7 @@ class BackendGcontacts extends BackendDiff {
 					break;
 				case 'Spouse':
 					debugLog($p['key'].': '.(string) $p['value']);
-					$message->children = w2ui($p['value']);
+					$message->spouse = w2ui($p['value']);
 					break;
 			}
 		    }
@@ -906,8 +923,8 @@ $atomentry = array (
     'event' =>  array (
 	'@attributes' => array ( 'xmlns' => $xmlns2005, 'rel' => 'anniversary','xmlns:default'=>"http://schemas.google.com/g/2005" ),
 	'default:when' => array(
-	    '@attributes' => array( 
-	    'startTime' => u2wi($message->anniversary),
+	    '@attributes' => array(
+		'startTime' => u2wi($message->anniversary),
 	    ),
 	),
     ),
